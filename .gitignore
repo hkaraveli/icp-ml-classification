@@ -1,0 +1,42 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+
+# Data and outputs (if datasets are local and NOT to be tracked)
+datasets/
+*.csv
+*.xls
+*.xlsx
+
+# Auto-generated figures and outputs (optional, only if not versioning them)
+figures/
+*.png
+*.jpg
+
+# Virtual environment folders
+.env/
+.venv/
+env/
+venv/
+ENV/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE & editor configs
+.vscode/
+.idea/
+
+# Python virtual environment settings
+Pipfile.lock
+poetry.lock
+
+# Test, build, dist folders (if any)
+build/
+dist/
+*.egg-info/
