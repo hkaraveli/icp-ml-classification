@@ -1,0 +1,26 @@
+# Data Description - ICP Gene Expression Project
+
+This project utilizes open-access metadata and example gene expression data from the NASA GeneLab study OSD-364, focusing on idiopathic intracranial hypertension (IIH) and its relevance to microgravity-induced ICP elevation in astronauts.
+
+## Study Reference
+- **Title:** Inflammatory gene expression signatures in idiopathic intracranial hypertension: possible implications in microgravity-induced ICP elevation
+- **DOI:** 10.1038/s41526-017-0036-6
+- **GeneLab Link:** https://lsda.jsc.nasa.gov/Experiment/exper/13553
+- **PI:** Susana B. Zanello (NASA Johnson Space Center)
+- **Study Design:** Real-Time PCR-based profiling of mRNA and miRNA from exosome samples in plasma/CSF
+
+## Sample Metadata Fields
+- Sample Name
+- Sex (female/male)
+- Age (years)
+- Height (meters)
+- Weight (kilograms)
+- Material Type (Plasma)
+- ICP Group (high ICP / normal to mild ICP)
+- Average ICP (mmHg)
+- Sample Storage Temperature (°C)
+
+## Example Data
+Gene expression data are not included due to privacy and data sharing restrictions. Dummy or simulated data can be provided in the `example_data/` folder for reproducibility.
+
+For more detailed protocol and study information, see the reference publication and [references.md].
