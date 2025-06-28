@@ -8,8 +8,9 @@ data from the NASA GeneLab OSD-364 dataset. It includes data preprocessing, supe
 Random Forest, KNN), model evaluation, SHAP explainability, gene-level statistical analysis, and clustering.
 
 Instructions:
-- Update the file paths below to point to your own data files.
-- Install the required Python packages: pandas, numpy, seaborn, matplotlib, scikit-learn, shap
+- Update the DATA_DIR variable to point to your data folder.
+- Set DATA_TYPE as "mrna" or "mirna" according to the file you want to analyze.
+- Install required Python packages:
     pip install pandas numpy seaborn matplotlib scikit-learn shap
 """
 
@@ -24,27 +25,34 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import (
-    accuracy_score, precision_score, recall_score,
-    confusion_matrix, RocCurveDisplay
-)
+from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix, RocCurveDisplay
 import shap
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from pandas.api.types import is_numeric_dtype
 
-# -------------------------------
-# 0. FIX WINDOWS MKL BUG (Optional, for some Windows users)
-# -------------------------------
+# --- 0. FIX WINDOWS MKL BUG (Optional, for some Windows users) ---
 os.environ["OMP_NUM_THREADS"] = "1"
 
-# -------------------------------
-# 1. LOAD DATA
-# -------------------------------
-# Update these paths to your local files:
-sample_path = "YOUR_PATH_HERE/s_OSD-364.txt"
-assay_path = "YOUR_PATH_HERE/a_OSD-364_transcription-profiling_real-time-pcr_QuantStudio_12K_Flex.txt"
+# --- 1. CONFIGURATION ---
+# Path to your data folder (edit this to your folder location)
+DATA_DIR = r"OSD-364_metadata_GLDS-364-ISA"
 
+# Choose which dataset to use: "mrna" or "mirna"
+DATA_TYPE = "mrna"  # or "mirna"
+
+# File names
+DATA_FILES = {
+    "mrna": "a_OSD-364_transcription-profiling_real-time-pcr_QuantStudio 12K Flex.txt",
+    "mirna": "a_OSD-364_transcription-profiling_real-time-pcr_QuantStudio 12K Flex-1.txt",
+    "clinical": "s_OSD-364.txt"
+}
+
+# Full file paths
+assay_path = os.path.join(DATA_DIR, DATA_FILES[DATA_TYPE])
+sample_path = os.path.join(DATA_DIR, DATA_FILES["clinical"])
+
+# --- 2. LOAD DATA ---
 samples = pd.read_csv(sample_path, sep="\t", dtype=str).reset_index(drop=True)
 assay = pd.read_csv(assay_path, sep="\t", dtype=str).reset_index(drop=True)
 
@@ -78,9 +86,7 @@ numeric_cols = merged.select_dtypes(include='number').columns
 merged[numeric_cols] = merged[numeric_cols].fillna(merged[numeric_cols].median())
 merged = merged.dropna(subset=['ICP_Group'])
 
-# -------------------------------
-# 2. SUPERVISED MODELING
-# -------------------------------
+# --- 3. SUPERVISED MODELING ---
 features = ['Characteristics[Age]', 'Characteristics[Height]', 'Characteristics[Weight]', 'BMI']
 X = merged[features]
 y = merged['ICP_Group']
@@ -96,9 +102,7 @@ models = {
 }
 
 def evaluate_model(name, model, X_train, X_test, y_train, y_test):
-    """
-    Train model, print classification metrics, and plot confusion matrix & ROC curve.
-    """
+    """Train model, print classification metrics, plot confusion matrix & ROC curve."""
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
     y_proba = model.predict_proba(X_test)[:, 1] if hasattr(model, "predict_proba") else y_pred
@@ -121,13 +125,10 @@ def evaluate_model(name, model, X_train, X_test, y_train, y_test):
     plt.tight_layout()
     plt.show()
 
-# Evaluate each model
 for name, model in models.items():
     evaluate_model(name, model, X_train, X_test, y_train, y_test)
 
-# -------------------------------
-# 3. CROSS-VALIDATION SUMMARY
-# -------------------------------
+# --- 4. CROSS-VALIDATION SUMMARY ---
 cv_results = {}
 for name, model in models.items():
     scores = cross_validate(model, X_scaled, y, cv=3, scoring=["accuracy", "precision", "recall", "roc_auc"])
@@ -143,28 +144,20 @@ plt.title("Cross-Validation Metrics")
 plt.tight_layout()
 plt.show()
 
-# -------------------------------
-# 4. HYPERPARAMETER TUNING (RANDOM FOREST)
-# -------------------------------
+# --- 5. HYPERPARAMETER TUNING (RANDOM FOREST) ---
 param_grid_rf = {"n_estimators": [50, 100], "max_depth": [None, 5, 10]}
 rf_grid = GridSearchCV(RandomForestClassifier(random_state=42), param_grid_rf, cv=3, scoring='roc_auc')
 rf_grid.fit(X_scaled, y)
 print("\nBest Random Forest Params:", rf_grid.best_params_)
 
-# -------------------------------
-# 5. MODEL EXPLAINABILITY (SHAP)
-# -------------------------------
+# --- 6. MODEL EXPLAINABILITY (SHAP) ---
 explainer = shap.Explainer(rf_grid.best_estimator_)
 shap_values = explainer(X_scaled)
 shap.summary_plot(shap_values, features=X, feature_names=features)
 
-# -------------------------------
-# 6. FEATURE IMPORTANCE (RANDOM FOREST)
-# -------------------------------
+# --- 7. FEATURE IMPORTANCE (RANDOM FOREST) ---
 def plot_importance(model, feature_names, num=10):
-    """
-    Plot feature importance for the Random Forest model.
-    """
+    """Plot feature importance for the Random Forest model."""
     importance_df = pd.DataFrame({
         'Feature': feature_names,
         'Importance': model.feature_importances_
@@ -188,9 +181,7 @@ def plot_importance(model, feature_names, num=10):
 
 plot_importance(rf_grid.best_estimator_, features)
 
-# -------------------------------
-# 7. GENE-LEVEL DIFFERENTIAL EXPRESSION (MANN-WHITNEY U)
-# -------------------------------
+# --- 8. GENE-LEVEL DIFFERENTIAL EXPRESSION (MANN-WHITNEY U) ---
 gene_cols = [col for col in assay.columns if col != 'Sample Name']
 valid_genes = [
     gene for gene in gene_cols
@@ -229,9 +220,7 @@ plt.xlabel("Gene")
 plt.tight_layout()
 plt.show()
 
-# -------------------------------
-# 8. PCA & K-MEANS CLUSTERING
-# -------------------------------
+# --- 9. PCA & K-MEANS CLUSTERING ---
 pca = PCA(n_components=2)
 X_pca = pca.fit_transform(assay.drop(columns=['Sample Name']).fillna(0))
 
